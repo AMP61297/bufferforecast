@@ -148,6 +148,8 @@ st.pyplot(fig)
 
 # --- Excel-Export mit Bild & Zeitstempel ---
 berlin = zoneinfo.ZoneInfo("Europe/Berlin")
+# Zeitstempel erzeugen
+zeitstempel = datetime.datetime.now(berlin).strftime("Exportzeitpunkt: %Y-%m-%d %H:%M:%S")
 
 output = io.BytesIO()
 image_path = "puffer_chart.png"
