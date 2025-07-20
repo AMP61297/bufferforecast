@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -62,25 +61,62 @@ df_edited = st.data_editor(
 # Sicherstellen, dass "Puffer Ende" existiert
 df_edited["Puffer Ende"] = np.nan
 
-# --- Puffer Ende berechnen ---
+# --- Puffer Ende berechnen mit 93% effektivem Zulauf (gerundet) + Anzeige der berechneten Spalte ---
 df_edited = df_edited.sort_values(["Linie", "Datum"]).reset_index(drop=True)
+
+ZULAUF_FAKTOR = 0.93
+df_edited["Zulauf berechnet (93 %)"] = np.nan
 
 for linie in df_edited["Linie"].unique():
     df_linie = df_edited[df_edited["Linie"] == linie].copy()
+
     for i in range(len(df_linie)):
+        zulauf = df_linie.iloc[i]["Zulauf"]
+        ablauf = df_linie.iloc[i]["Ablauf"]
+
+        # Berechne korrigierten Zulauf (gerundet)
+        effektiver_zulauf = round(zulauf * ZULAUF_FAKTOR) if pd.notna(zulauf) else np.nan
+        df_linie.loc[df_linie.index[i], "Zulauf berechnet (93 %)"] = effektiver_zulauf
+
         if i == 0:
-            if pd.notna(df_linie.iloc[i]["Puffer Start"]) and pd.notna(df_linie.iloc[i]["Zulauf"]) and pd.notna(df_linie.iloc[i]["Ablauf"]):
+            if (
+                pd.notna(df_linie.iloc[i]["Puffer Start"])
+                and pd.notna(effektiver_zulauf)
+                and pd.notna(ablauf)
+            ):
                 df_linie.loc[df_linie.index[i], "Puffer Ende"] = (
-                    df_linie.iloc[i]["Puffer Start"] + df_linie.iloc[i]["Zulauf"] - df_linie.iloc[i]["Ablauf"]
+                    df_linie.iloc[i]["Puffer Start"] + effektiver_zulauf - ablauf
                 )
         else:
             if pd.isna(df_linie.iloc[i]["Puffer Start"]):
                 df_linie.loc[df_linie.index[i], "Puffer Start"] = df_linie.iloc[i - 1]["Puffer Ende"]
-            if pd.notna(df_linie.iloc[i]["Puffer Start"]) and pd.notna(df_linie.iloc[i]["Zulauf"]) and pd.notna(df_linie.iloc[i]["Ablauf"]):
+            if (
+                pd.notna(df_linie.iloc[i]["Puffer Start"])
+                and pd.notna(effektiver_zulauf)
+                and pd.notna(ablauf)
+            ):
                 df_linie.loc[df_linie.index[i], "Puffer Ende"] = (
-                    df_linie.iloc[i]["Puffer Start"] + df_linie.iloc[i]["Zulauf"] - df_linie.iloc[i]["Ablauf"]
+                    df_linie.iloc[i]["Puffer Start"] + effektiver_zulauf - ablauf
                 )
+
     df_edited.update(df_linie)
+
+# --- Nach Zeitraum filtern ---
+df_edited = df_edited[df_edited["Datum"].between(start_datum, start_datum + datetime.timedelta(days=anzeige_tage - 1))]
+
+# 🔄 Spalten sortieren für bessere Anzeige
+spalten_sortiert = [
+    "Linie",
+    "Datum",
+    "Puffer Start",
+    "Zulauf",
+    "Zulauf berechnet (93 %)",
+    "Ablauf",
+    "Ausschleuser",
+    "Puffer Ende"
+]
+df_edited = df_edited[spalten_sortiert]
+
 
 # --- Nach Zeitraum filtern ---
 df_edited = df_edited[df_edited["Datum"].between(start_datum, start_datum + datetime.timedelta(days=anzeige_tage - 1))]
@@ -110,3 +146,4 @@ fig.autofmt_xdate(rotation=45)
 ax.grid(True)
 ax.legend()
 
+st.pyplot(fig)
