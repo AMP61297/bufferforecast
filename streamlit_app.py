@@ -179,18 +179,25 @@ if st.button("📥 Speichern als Excel mit Grafik"):
 
     # 3. Erzeuge Excel-Datei mit Tabelle und Bild
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df_edited.to_excel(writer, index=False, sheet_name='Pufferprognose')
-        workbook = writer.book
-        worksheet = writer.sheets['Pufferprognose']
+    output = io.BytesIO()
+with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+    df_edited.to_excel(writer, index=False, sheet_name='Pufferprognose')
+    workbook = writer.book
+    worksheet = writer.sheets['Pufferprognose']
 
-        # 4. Füge das Bild ein
-        worksheet.insert_image('H2', 'puffer_chart.png', {'image_data': img_buffer, 'x_scale': 0.8, 'y_scale': 0.8})
+    # 🔽 Druck-Einstellungen
+    worksheet.set_landscape()                          # Querformat
+    worksheet.fit_to_pages(1, 1)                       # Auf eine Seite skalieren
+    worksheet.set_paper(9)                             # A4
+    worksheet.center_horizontally()                    # Horizontal zentrieren
+    worksheet.set_margins(left=0.2, right=0.2, top=0.5, bottom=0.5)  # Weniger Ränder
+    worksheet.repeat_rows(0)                           # Kopfzeile auf jeder Seite
 
-    st.download_button(
-        label="⬇️ Excel-Datei mit Grafik herunterladen",
-        data=output.getvalue(),
-        file_name="Pufferprognose_mit_Grafik.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    # 🔽 Automatisch Spaltenbreite anpassen
+    for idx, col in enumerate(df_edited.columns):
+        col_width = max(df_edited[col].astype(str).map(len).max(), len(str(col))) + 2
+        worksheet.set_column(idx, idx, col_width)
+
+    # 🔽 Bild einfügen (Diagramm)
+    worksheet.insert_image('H2', 'puffer_chart.png', {'image_data': img_buffer, 'x_scale': 0.8, 'y_scale': 0.8})
 
