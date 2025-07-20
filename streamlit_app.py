@@ -151,6 +151,12 @@ st.pyplot(fig)
 import io
 import xlsxwriter
 from datetime import datetime
+import zoneinfo  # ⬅️ Zeitzonenimport nach datetime
+
+# 🔽 Direkt danach kommt dein Zeitstempel in Berliner Zeit
+berlin = zoneinfo.ZoneInfo("Europe/Berlin")
+zeitstempel = datetime.now(berlin).strftime("Exportzeitpunkt: %Y-%m-%d %H:%M:%S")
+
 
 # 🔄 Excel-Datei vorbereiten
 output = io.BytesIO()
