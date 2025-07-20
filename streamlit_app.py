@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import io
 import xlsxwriter
-from datetime import datetime
+import datetime
 import zoneinfo
 
 # ⬛ Eigene CSS für STILL-Branding
