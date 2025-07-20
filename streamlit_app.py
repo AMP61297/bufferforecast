@@ -147,23 +147,30 @@ ax.grid(True)
 ax.legend()
 
 st.pyplot(fig)
+
 import io
 import xlsxwriter
+from datetime import datetime
 
 # 🔄 Excel-Datei vorbereiten
 output = io.BytesIO()
+zeitstempel = datetime.now().strftime("Exportzeitpunkt: %Y-%m-%d %H:%M:%S")
 
 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-    df_edited.to_excel(writer, index=False, sheet_name="Pufferprognose")
+    df_edited.to_excel(writer, index=False, sheet_name="Pufferprognose", startrow=2)  # Tabelle beginnt in Zeile 3
+
     workbook = writer.book
     worksheet = writer.sheets["Pufferprognose"]
 
-    # 🖼️ Bild exportieren
+    # 🕒 Zeitstempel in Zelle L1 (rechte Seite)
+    worksheet.write("L1", zeitstempel)
+
+    # 🖼️ Bild speichern
     image_path = "puffer_chart.png"
     fig.savefig(image_path, bbox_inches='tight')
 
-    # 📊 Bild unter die Tabelle einfügen
-    image_row = len(df_edited) + 3  # Dynamisch unterhalb der Tabelle einfügen
+    # 📊 Bild unterhalb der Tabelle einfügen
+    image_row = len(df_edited) + 5
     worksheet.insert_image(image_row, 0, image_path, {
         'x_offset': 0,
         'y_offset': 10,
@@ -171,9 +178,9 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         'y_scale': 1.0
     })
 
-    # 📄 Seite einrichten
+    # 📄 Seitenlayout optimieren
     worksheet.set_paper(9)  # A4
-    worksheet.fit_to_pages(1, 0)  # Alles auf eine Seite
+    worksheet.fit_to_pages(1, 0)
     worksheet.center_horizontally()
     worksheet.set_margins(left=0.5, right=0.5, top=0.75, bottom=0.75)
 
@@ -184,4 +191,5 @@ st.download_button(
     file_name="pufferprognose.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
+
 
