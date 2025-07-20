@@ -160,7 +160,6 @@ zeitstempel = datetime.now(berlin).strftime("Exportzeitpunkt: %Y-%m-%d %H:%M:%S"
 
 # 🔄 Excel-Datei vorbereiten
 output = io.BytesIO()
-zeitstempel = datetime.now().strftime("Exportzeitpunkt: %Y-%m-%d %H:%M:%S")
 
 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
     df_edited.to_excel(writer, index=False, sheet_name="Pufferprognose", startrow=2)  # Tabelle beginnt in Zeile 3
