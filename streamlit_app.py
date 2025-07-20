@@ -147,51 +147,37 @@ ax.grid(True)
 ax.legend()
 
 st.pyplot(fig)
-
-# 💾 Excel mit Bild und Drucklayout exportieren
 import io
-from PIL import Image
 import xlsxwriter
 
-st.markdown("### 💾 Exportieren & Drucken")
+# 🔄 Excel-Datei vorbereiten
+output = io.BytesIO()
 
-if st.button("📥 Exportieren als Excel mit Grafik"):
-    # --- 1. Diagramm zwischenspeichern ---
-    img_buffer = io.BytesIO()
-    fig.savefig(img_buffer, format="png")
-    img_buffer.seek(0)
+with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+    df_edited.to_excel(writer, index=False, sheet_name="Pufferprognose")
+    workbook = writer.book
+    worksheet = writer.sheets["Pufferprognose"]
 
-    # --- 2. Excel schreiben ---
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df_edited.to_excel(writer, sheet_name="Pufferprognose", index=False)
+    # 🖼️ Bild exportieren
+    image_path = "puffer_chart.png"
+    fig.savefig(image_path, bbox_inches='tight')
 
-        workbook = writer.book
-        worksheet = writer.sheets["Pufferprognose"]
+    # 📊 Bild unter die Tabelle einfügen
+    image_row = len(df_edited) + 3  # Dynamisch unterhalb der Tabelle einfügen
+    worksheet.insert_image(image_row, 0, image_path, {
+        'x_offset': 0,
+        'y_offset': 10,
+        'x_scale': 1.0,
+        'y_scale': 1.0
+    })
 
-        # 🔧 Drucklayout: Querformat, skaliert auf eine Seite
-        worksheet.set_landscape()
-        worksheet.fit_to_pages(1, 1)
-        worksheet.set_paper(9)  # A4
-        worksheet.center_horizontally()
-        worksheet.set_margins(left=0.2, right=0.2, top=0.5, bottom=0.5)
-        worksheet.repeat_rows(0)
+    # 📄 Seite einrichten
+    worksheet.set_paper(9)  # A4
+    worksheet.fit_to_pages(1, 0)  # Alles auf eine Seite
+    worksheet.center_horizontally()
+    worksheet.set_margins(left=0.5, right=0.5, top=0.75, bottom=0.75)
 
-        # 📐 Spaltenbreite automatisch anpassen
-        for idx, col in enumerate(df_edited.columns):
-            max_len = max(df_edited[col].astype(str).map(len).max(), len(str(col)))
-            worksheet.set_column(idx, idx, max_len + 2)
-
-# 🖼️ Diagramm einfügen direkt unterhalb der Tabelle
-image_row = len(df_edited) + 2  # Zwei Zeilen Puffer
-worksheet.insert_image(image_row, 0, "puffer_chart.png", {
-    "image_data": img_buffer,
-    "x_scale": 0.8,
-    "y_scale": 0.8
-})
-
-
-# Download-Button anzeigen
+# 📥 Download-Button
 st.download_button(
     label="📥 Excel-Datei herunterladen",
     data=output.getvalue(),
