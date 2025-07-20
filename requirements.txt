@@ -3,3 +3,4 @@ panda
 numpy
 matplotlib
 xlsxwriter
+Pillow
