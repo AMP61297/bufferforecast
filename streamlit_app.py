@@ -147,3 +147,50 @@ ax.grid(True)
 ax.legend()
 
 st.pyplot(fig)
+
+import io
+from PIL import Image
+import xlsxwriter
+
+st.markdown("### 💾 Pufferprognose exportieren")
+
+if st.button("📥 Speichern als Excel mit Grafik"):
+
+    # 1. Erzeuge das Diagramm nochmal im Hintergrund (damit es als Bild gespeichert werden kann)
+    fig_export, ax_export = plt.subplots(figsize=(10, 5))
+    for linie in ausgewaehlte_linien:
+        df_plot = df_edited[df_edited["Linie"] == linie]
+        ax_export.plot(df_plot["Datum"], df_plot["Puffer Ende"], marker="o", label=linie)
+    ax_export.axhspan(min_grenze, max_grenze, color='lightgreen', alpha=0.3, label="Zielbereich")
+    ax_export.set_xlabel("Datum")
+    ax_export.set_ylabel("Puffer Ende")
+    ax_export.set_title("Pufferentwicklung je Linie")
+    ax_export.xaxis.set_major_formatter(mdates.DateFormatter('%d.%m'))
+    ax_export.xaxis.set_major_locator(mdates.DayLocator(interval=1))
+    fig_export.autofmt_xdate(rotation=45)
+    ax_export.grid(True)
+    ax_export.legend()
+
+    # 2. Speichere Diagramm als Bild im Speicher
+    img_buffer = io.BytesIO()
+    fig_export.savefig(img_buffer, format='png')
+    plt.close(fig_export)
+    img_buffer.seek(0)
+
+    # 3. Erzeuge Excel-Datei mit Tabelle und Bild
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df_edited.to_excel(writer, index=False, sheet_name='Pufferprognose')
+        workbook = writer.book
+        worksheet = writer.sheets['Pufferprognose']
+
+        # 4. Füge das Bild ein
+        worksheet.insert_image('H2', 'puffer_chart.png', {'image_data': img_buffer, 'x_scale': 0.8, 'y_scale': 0.8})
+
+    st.download_button(
+        label="⬇️ Excel-Datei mit Grafik herunterladen",
+        data=output.getvalue(),
+        file_name="Pufferprognose_mit_Grafik.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
