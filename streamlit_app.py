@@ -191,10 +191,11 @@ worksheet.insert_image(image_row, 0, "puffer_chart.png", {
 })
 
 
-    # --- 3. Bereitstellen zum Download ---
-    st.download_button(
-        label="📤 Excel-Datei herunterladen",
-        data=output.getvalue(),
-        file_name="Pufferprognose.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+# Download-Button anzeigen
+st.download_button(
+    label="📥 Excel-Datei herunterladen",
+    data=output.getvalue(),
+    file_name="pufferprognose.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
