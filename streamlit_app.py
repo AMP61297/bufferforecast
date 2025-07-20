@@ -148,56 +148,51 @@ ax.legend()
 
 st.pyplot(fig)
 
+# 💾 Excel mit Bild und Drucklayout exportieren
 import io
 from PIL import Image
 import xlsxwriter
 
-st.markdown("### 💾 Pufferprognose exportieren")
+st.markdown("### 💾 Exportieren & Drucken")
 
-if st.button("📥 Speichern als Excel mit Grafik"):
-
-    # 1. Erzeuge das Diagramm nochmal im Hintergrund (damit es als Bild gespeichert werden kann)
-    fig_export, ax_export = plt.subplots(figsize=(10, 5))
-    for linie in ausgewaehlte_linien:
-        df_plot = df_edited[df_edited["Linie"] == linie]
-        ax_export.plot(df_plot["Datum"], df_plot["Puffer Ende"], marker="o", label=linie)
-    ax_export.axhspan(min_grenze, max_grenze, color='lightgreen', alpha=0.3, label="Zielbereich")
-    ax_export.set_xlabel("Datum")
-    ax_export.set_ylabel("Puffer Ende")
-    ax_export.set_title("Pufferentwicklung je Linie")
-    ax_export.xaxis.set_major_formatter(mdates.DateFormatter('%d.%m'))
-    ax_export.xaxis.set_major_locator(mdates.DayLocator(interval=1))
-    fig_export.autofmt_xdate(rotation=45)
-    ax_export.grid(True)
-    ax_export.legend()
-
-    # 2. Speichere Diagramm als Bild im Speicher
+if st.button("📥 Exportieren als Excel mit Grafik"):
+    # --- 1. Diagramm zwischenspeichern ---
     img_buffer = io.BytesIO()
-    fig_export.savefig(img_buffer, format='png')
-    plt.close(fig_export)
+    fig.savefig(img_buffer, format="png")
     img_buffer.seek(0)
 
-    # 3. Erzeuge Excel-Datei mit Tabelle und Bild
+    # --- 2. Excel schreiben ---
     output = io.BytesIO()
-    output = io.BytesIO()
-with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-    df_edited.to_excel(writer, index=False, sheet_name='Pufferprognose')
-    workbook = writer.book
-    worksheet = writer.sheets['Pufferprognose']
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df_edited.to_excel(writer, sheet_name="Pufferprognose", index=False)
 
-    # 🔽 Druck-Einstellungen
-    worksheet.set_landscape()                          # Querformat
-    worksheet.fit_to_pages(1, 1)                       # Auf eine Seite skalieren
-    worksheet.set_paper(9)                             # A4
-    worksheet.center_horizontally()                    # Horizontal zentrieren
-    worksheet.set_margins(left=0.2, right=0.2, top=0.5, bottom=0.5)  # Weniger Ränder
-    worksheet.repeat_rows(0)                           # Kopfzeile auf jeder Seite
+        workbook = writer.book
+        worksheet = writer.sheets["Pufferprognose"]
 
-    # 🔽 Automatisch Spaltenbreite anpassen
-    for idx, col in enumerate(df_edited.columns):
-        col_width = max(df_edited[col].astype(str).map(len).max(), len(str(col))) + 2
-        worksheet.set_column(idx, idx, col_width)
+        # 🔧 Drucklayout: Querformat, skaliert auf eine Seite
+        worksheet.set_landscape()
+        worksheet.fit_to_pages(1, 1)
+        worksheet.set_paper(9)  # A4
+        worksheet.center_horizontally()
+        worksheet.set_margins(left=0.2, right=0.2, top=0.5, bottom=0.5)
+        worksheet.repeat_rows(0)
 
-    # 🔽 Bild einfügen (Diagramm)
-    worksheet.insert_image('H2', 'puffer_chart.png', {'image_data': img_buffer, 'x_scale': 0.8, 'y_scale': 0.8})
+        # 📐 Spaltenbreite automatisch anpassen
+        for idx, col in enumerate(df_edited.columns):
+            max_len = max(df_edited[col].astype(str).map(len).max(), len(str(col)))
+            worksheet.set_column(idx, idx, max_len + 2)
 
+        # 🖼️ Diagramm einfügen
+        worksheet.insert_image("H2", "puffer_chart.png", {
+            "image_data": img_buffer,
+            "x_scale": 0.8,
+            "y_scale": 0.8
+        })
+
+    # --- 3. Bereitstellen zum Download ---
+    st.download_button(
+        label="📤 Excel-Datei herunterladen",
+        data=output.getvalue(),
+        file_name="Pufferprognose.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
