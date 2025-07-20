@@ -182,12 +182,14 @@ if st.button("📥 Exportieren als Excel mit Grafik"):
             max_len = max(df_edited[col].astype(str).map(len).max(), len(str(col)))
             worksheet.set_column(idx, idx, max_len + 2)
 
-        # 🖼️ Diagramm einfügen
-        worksheet.insert_image("H2", "puffer_chart.png", {
-            "image_data": img_buffer,
-            "x_scale": 0.8,
-            "y_scale": 0.8
-        })
+# 🖼️ Diagramm einfügen direkt unterhalb der Tabelle
+image_row = len(df_edited) + 2  # Zwei Zeilen Puffer
+worksheet.insert_image(image_row, 0, "puffer_chart.png", {
+    "image_data": img_buffer,
+    "x_scale": 0.8,
+    "y_scale": 0.8
+})
+
 
     # --- 3. Bereitstellen zum Download ---
     st.download_button(
