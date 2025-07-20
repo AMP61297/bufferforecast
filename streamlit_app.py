@@ -7,7 +7,7 @@ import matplotlib.dates as mdates
 
 
 
-st.set_page_config(page_title="Pufferprognose", layout="wide")
+st.set_page_config(page_title="Bufferforecast", layout="wide")
 st.title("📦 Pufferprognose HGM")
 
 # --- Sidebar für Min/Max ---
