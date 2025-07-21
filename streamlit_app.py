@@ -99,26 +99,35 @@ df_edited = df_edited[[
 # ✅ Leere Zellen durch 0 ersetzen
 df_edited.fillna(0, inplace=True)
 
-# Zwei nebeneinanderstehende Tabellen – editierbar & berechnet
-col1, col2 = st.columns(2)
+st.subheader("✏️ Eingabedaten & 📋 Berechnete Puffer Ende")
+
+# ⚙️ Breite Container verwenden
+st.markdown("""<style>
+    .element-container:has(> .block-container) {
+        max-width: none !important;
+        padding-left: 2rem;
+        padding-right: 2rem;
+    }
+</style>""", unsafe_allow_html=True)
+
+col1, col2 = st.columns([1, 1], gap="large")
 
 with col1:
-    st.subheader("✏️ Eingabedaten")
     st.data_editor(
         df_input.fillna(0),
         use_container_width=True,
-        height=anzeige_tage * 43 + 100,  # dynamisch auf Zeilenhöhe abgestimmt
+        height=anzeige_tage * 43 + 100,
         num_rows="dynamic",
         disabled=["Linie", "Datum"]
     )
 
 with col2:
-    st.subheader("📋 Berechnete Puffer Ende")
     st.dataframe(
         df_edited.fillna(0),
         use_container_width=True,
-        height=anzeige_tage * 43 + 100  # gleiche Höhe wie links
+        height=anzeige_tage * 43 + 100
     )
+
 
 
 # --- Diagramm über die volle Breite anzeigen ---
