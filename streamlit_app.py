@@ -9,9 +9,24 @@ import xlsxwriter
 import datetime
 import zoneinfo
 
+
+# ✅ CSS einfügen, um horizontales Scrollen in Tabellen zu vermeiden
+st.markdown("""
+    <style>
+    .stDataFrame div[data-testid="stHorizontalBlock"] {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+    .stDataFrame th, .stDataFrame td {
+        min-width: 100px;
+        text-align: center;
+    }
+    </style>
+""", unsafe_allow_html=True)
 # --- Kopfzeile & Logo ---
 st.title("📦 Pufferprognose")
 st.markdown("#### Bereich: Vormontage")
+
 
 # --- Sidebar für Einstellungen ---
 st.sidebar.header("Grenzwerte für Puffer Ende")
@@ -43,20 +58,6 @@ for linie in linien:
 df_input = pd.DataFrame(data)
 df_input = df_input[df_input["Linie"].isin(ausgewaehlte_linien)].copy()
 
-# --- Eingabemaske ---
-df_edited = st.data_editor(
-    df_input,
-    use_container_width=True,
-    num_rows="dynamic",
-    column_config={
-        "Linie": st.column_config.TextColumn(disabled=True),
-        "Datum": st.column_config.DateColumn(disabled=True),
-        "Puffer Start": st.column_config.NumberColumn(),
-        "Zulauf": st.column_config.NumberColumn(),
-        "Ablauf": st.column_config.NumberColumn(),
-        "Ausschleuser": st.column_config.NumberColumn()
-    }
-)
 
 # --- Berechnung Puffer Ende (mit 93% Zulauf) ---
 ZULAUF_FAKTOR = 0.93
