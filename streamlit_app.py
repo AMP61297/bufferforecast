@@ -97,18 +97,26 @@ df_edited = df_edited[[
 # ✅ Leere Zellen durch 0 ersetzen
 df_edited.fillna(0, inplace=True)
 
-# --- Anzeige Tabelle ---
-st.subheader("📋 Tabelle mit berechnetem Puffer Ende")
-# Zwei nebeneinanderstehende Tabellen
+# Zwei nebeneinanderstehende Tabellen – editierbar & berechnet
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("📋 Eingabedaten")
-    st.dataframe(df_input.fillna(0), use_container_width=True)
+    st.subheader("✏️ Eingabedaten")
+    st.data_editor(
+        df_input.fillna(0),
+        use_container_width=True,
+        height=anzeige_tage * 43 + 100,  # dynamisch auf Zeilenhöhe abgestimmt
+        num_rows="dynamic",
+        disabled=["Linie", "Datum"]
+    )
 
 with col2:
     st.subheader("📋 Berechnete Puffer Ende")
-    st.dataframe(df_edited, use_container_width=True)
+    st.dataframe(
+        df_edited.fillna(0),
+        use_container_width=True,
+        height=anzeige_tage * 43 + 100  # gleiche Höhe wie links
+    )
 
 
 # --- Diagramm über die volle Breite anzeigen ---
