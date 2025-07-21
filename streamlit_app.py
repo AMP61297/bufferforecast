@@ -57,6 +57,7 @@ for linie in linien:
 
 df_input = pd.DataFrame(data)
 df_input = df_input[df_input["Linie"].isin(ausgewaehlte_linien)].copy()
+df_edited = df_input.copy()
 
 
 # --- Berechnung Puffer Ende (mit 93% Zulauf) ---
