@@ -45,7 +45,7 @@ max_grenze = st.sidebar.slider("🔼 Maximalwert", min_value=10, max_value=100, 
 
 st.sidebar.header("Zeitraum einstellen")
 start_datum = st.sidebar.date_input("Startdatum", value=datetime.date.today())
-anzeige_tage = st.sidebar.slider("Anzahl Tage anzeigen", min_value=1, max_value=30, value=10)
+anzeige_tage = st.sidebar.slider("Anzahl Tage anzeigen", min_value=1, max_value=30, value=5)
 tage = [start_datum + datetime.timedelta(days=i) for i in range(anzeige_tage)]
 
 # --- Linien definieren ---
@@ -207,4 +207,5 @@ st.download_button(
     file_name="pufferprognose.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
+
 
