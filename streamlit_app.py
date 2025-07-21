@@ -35,8 +35,8 @@ st.markdown("""
 
 # --- Kopfzeile & Logo ---
 st.image("https://upload.wikimedia.org/wikipedia/commons/6/60/STILL_logo.svg", width=200)
-st.title("📦 Pufferprognose – STILL GmbH")
-st.markdown("#### Bereich: Produktion & Logistik – Gabelstaplermontage")
+st.title("📦 Pufferprognose")
+st.markdown("#### Bereich: Vormontage")
 
 # --- Sidebar für Einstellungen ---
 st.sidebar.header("Grenzwerte für Puffer Ende")
