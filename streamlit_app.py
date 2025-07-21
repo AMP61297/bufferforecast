@@ -9,32 +9,7 @@ import xlsxwriter
 import datetime
 import zoneinfo
 
-# ⬛ Eigene CSS für STILL-Branding
-st.markdown("""
-    <style>
-    body {
-        background-color: #f5f5f5;
-    }
-    .main {
-        background-color: #ffffff;
-        padding: 2rem;
-        border-radius: 8px;
-    }
-    h1, h2, h3 {
-        color: #222222;
-        font-family: 'Segoe UI', sans-serif;
-    }
-    .stButton button, .stDownloadButton button {
-        background-color: #F36F21;
-        color: white;
-        border-radius: 5px;
-        font-weight: bold;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 # --- Kopfzeile & Logo ---
-st.image("https://upload.wikimedia.org/wikipedia/commons/6/60/STILL_logo.svg", width=200)
 st.title("📦 Pufferprognose")
 st.markdown("#### Bereich: Vormontage")
 
