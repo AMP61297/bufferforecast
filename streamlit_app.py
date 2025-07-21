@@ -97,9 +97,10 @@ df_edited = df_edited[[
 # ✅ Leere Zellen durch 0 ersetzen
 df_edited.fillna(0, inplace=True)
 
+# ✅ Eingabetabelle: editierbar (links)
 st.subheader("✏️ Eingabedaten & 📋 Berechnete Puffer Ende")
 
-# ⚙️ Breite Container verwenden
+# ⚙️ Volle Breite ermöglichen
 st.markdown("""<style>
     .element-container:has(> .block-container) {
         max-width: none !important;
@@ -108,10 +109,10 @@ st.markdown("""<style>
     }
 </style>""", unsafe_allow_html=True)
 
+# 🧮 Bearbeitbare Tabelle (links)
 col1, col2 = st.columns([5, 5], gap="large")
 
 with col1:
-    st.subheader("✏️ Eingabedaten")
     df_input = st.data_editor(
         df_input.fillna(0),
         use_container_width=True,
@@ -120,10 +121,40 @@ with col1:
         disabled=["Linie", "Datum"]
     )
 
-# 🧠 Bearbeitete Eingabe übernehmen für Berechnung
+# 🧠 Daten berechnen auf Basis der Eingabe
 df_edited = df_input.copy()
 
+ZULAUF_FAKTOR = 0.93
+df_edited["Zulauf berechnet (93 %)"] = 0.0
+df_edited["Puffer Ende"] = 0.0
 
+df_edited = df_edited.sort_values(["Linie", "Datum"]).reset_index(drop=True)
+
+for linie in df_edited["Linie"].unique():
+    df_linie = df_edited[df_edited["Linie"] == linie].copy()
+
+    for i in range(len(df_linie)):
+        zulauf = df_linie.iloc[i]["Zulauf"]
+        ablauf = df_linie.iloc[i]["Ablauf"]
+        effektiver_zulauf = round(zulauf * ZULAUF_FAKTOR)
+
+        df_linie.loc[df_linie.index[i], "Zulauf berechnet (93 %)"] = effektiver_zulauf
+
+        if i == 0:
+            if pd.notna(df_linie.iloc[i]["Puffer Start"]):
+                df_linie.loc[df_linie.index[i], "Puffer Ende"] = (
+                    df_linie.iloc[i]["Puffer Start"] + effektiver_zulauf - ablauf
+                )
+        else:
+            if pd.isna(df_linie.iloc[i]["Puffer Start"]):
+                df_linie.loc[df_linie.index[i], "Puffer Start"] = df_linie.iloc[i - 1]["Puffer Ende"]
+            df_linie.loc[df_linie.index[i], "Puffer Ende"] = (
+                df_linie.iloc[i]["Puffer Start"] + effektiver_zulauf - ablauf
+            )
+
+    df_edited.update(df_linie)
+
+# 🎯 Berechnete Tabelle (rechts)
 with col2:
     st.dataframe(
         df_edited.fillna(0),
@@ -132,10 +163,9 @@ with col2:
     )
 
 
-
 # --- Diagramm über die volle Breite anzeigen ---
 st.subheader("📊 Verlauf Puffer Ende")
-fig, ax = plt.subplots(figsize=(18, 6))  # ⬅️ Größer gemacht
+fig, ax = plt.subplots(figsize=(18, 6))  # ⬅️ Volle Breite
 
 for linie in ausgewaehlte_linien:
     df_plot = df_edited[df_edited["Linie"] == linie]
@@ -154,6 +184,7 @@ ax.grid(True, linestyle="--", alpha=0.3)
 ax.legend()
 
 st.pyplot(fig)
+
 
 # --- Excel-Export mit Bild, Zeitstempel & Formatierung ---
 berlin = zoneinfo.ZoneInfo("Europe/Berlin")
