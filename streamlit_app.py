@@ -9,6 +9,16 @@ import xlsxwriter
 import datetime
 import zoneinfo
 
+st.markdown("""
+    <style>
+    /* Maximiere die Breite des Seiteninhalts */
+    .block-container {
+        padding-left: 2rem;
+        padding-right: 2rem;
+        max-width: 100% !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 
 # --- Kopfzeile & Logo ---
@@ -98,7 +108,7 @@ st.markdown("""<style>
     }
 </style>""", unsafe_allow_html=True)
 
-col1, col2 = st.columns([1, 1], gap="large")
+col1, col2 = st.columns([5, 5], gap="large")
 
 with col1:
     st.data_editor(
