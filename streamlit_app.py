@@ -111,13 +111,18 @@ st.markdown("""<style>
 col1, col2 = st.columns([5, 5], gap="large")
 
 with col1:
-    st.data_editor(
+    st.subheader("✏️ Eingabedaten")
+    df_input = st.data_editor(
         df_input.fillna(0),
         use_container_width=True,
         height=anzeige_tage * 43 + 100,
         num_rows="dynamic",
         disabled=["Linie", "Datum"]
     )
+
+# 🧠 Bearbeitete Eingabe übernehmen für Berechnung
+df_edited = df_input.copy()
+
 
 with col2:
     st.dataframe(
