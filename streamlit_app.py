@@ -146,9 +146,8 @@ ax.legend()
 
 st.pyplot(fig)
 
-# --- Excel-Export mit Bild & Zeitstempel ---
+# --- Excel-Export mit Bild, Zeitstempel & Formatierung ---
 berlin = zoneinfo.ZoneInfo("Europe/Berlin")
-# Zeitstempel erzeugen
 zeitstempel = datetime.datetime.now(berlin).strftime("Exportzeitpunkt: %Y-%m-%d %H:%M:%S")
 
 output = io.BytesIO()
@@ -157,21 +156,55 @@ fig.savefig(image_path, bbox_inches='tight')
 
 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
     df_edited.to_excel(writer, index=False, sheet_name="Pufferprognose", startrow=2)
+
     workbook = writer.book
     worksheet = writer.sheets["Pufferprognose"]
+
+    # 📅 Zeitstempel in Zelle L1
     worksheet.write("L1", zeitstempel)
-    worksheet.insert_image(len(df_edited) + 5, 0, image_path, {
+
+    # 📊 Bild unter der Tabelle einfügen
+    image_row = len(df_edited) + 5
+    worksheet.insert_image(image_row, 0, image_path, {
         'x_offset': 0, 'y_offset': 10,
         'x_scale': 1.0, 'y_scale': 1.0
     })
+
+    # 📐 Formatierte Tabelle
+    header_format = workbook.add_format({
+        'bold': True,
+        'text_wrap': True,
+        'valign': 'middle',
+        'fg_color': '#F36F21',
+        'color': 'white',
+        'border': 1
+    })
+
+    for col_num, value in enumerate(df_edited.columns.values):
+        worksheet.write(2, col_num, value, header_format)
+
+    table_range = f"A3:H{len(df_edited) + 3}"
+    worksheet.add_table(table_range, {
+        'columns': [{'header': col} for col in df_edited.columns],
+        'style': 'Table Style Medium 9'
+    })
+
+    # 📏 Spaltenbreite automatisch anpassen
+    for i, column in enumerate(df_edited.columns):
+        max_len = max(df_edited[column].astype(str).map(len).max(), len(column)) + 2
+        worksheet.set_column(i, i, max_len)
+
+    # 📄 Seitenlayout
     worksheet.set_paper(9)
     worksheet.fit_to_pages(1, 0)
     worksheet.center_horizontally()
     worksheet.set_margins(left=0.5, right=0.5, top=0.75, bottom=0.75)
 
+# 📥 Download-Button
 st.download_button(
     label="📥 Excel-Datei herunterladen",
     data=output.getvalue(),
     file_name="pufferprognose.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
+
