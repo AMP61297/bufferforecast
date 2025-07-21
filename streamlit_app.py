@@ -99,12 +99,21 @@ df_edited.fillna(0, inplace=True)
 
 # --- Anzeige Tabelle ---
 st.subheader("📋 Tabelle mit berechnetem Puffer Ende")
-st.dataframe(df_edited, use_container_width=True)
+# Zwei nebeneinanderstehende Tabellen
+col1, col2 = st.columns(2)
 
-# --- Diagramm Puffer Ende ---
+with col1:
+    st.subheader("📋 Eingabedaten")
+    st.dataframe(df_input.fillna(0), use_container_width=True)
+
+with col2:
+    st.subheader("📋 Berechnete Puffer Ende")
+    st.dataframe(df_edited, use_container_width=True)
+
+
+# --- Diagramm über die volle Breite anzeigen ---
 st.subheader("📊 Verlauf Puffer Ende")
-
-fig, ax = plt.subplots(figsize=(10, 5))
+fig, ax = plt.subplots(figsize=(18, 6))  # ⬅️ Größer gemacht
 
 for linie in ausgewaehlte_linien:
     df_plot = df_edited[df_edited["Linie"] == linie]
@@ -117,15 +126,8 @@ ax.set_title("📊 Entwicklung Puffer Ende", fontsize=16)
 ax.set_xlabel("Datum")
 ax.set_ylabel("Pufferbestand")
 ax.xaxis.set_major_formatter(mdates.DateFormatter('%d.%m'))
-# Dynamisches Intervall für die x-Achse
-if anzeige_tage <= 10:
-    ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
-elif anzeige_tage <= 20:
-    ax.xaxis.set_major_locator(mdates.DayLocator(interval=2))
-else:
-    ax.xaxis.set_major_locator(mdates.DayLocator(interval=3))
-
-fig.autofmt_xdate(rotation=30)
+ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
+fig.autofmt_xdate(rotation=45)
 ax.grid(True, linestyle="--", alpha=0.3)
 ax.legend()
 
