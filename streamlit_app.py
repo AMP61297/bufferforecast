@@ -10,19 +10,7 @@ import datetime
 import zoneinfo
 
 
-# ✅ CSS einfügen, um horizontales Scrollen in Tabellen zu vermeiden
-st.markdown("""
-    <style>
-    .stDataFrame div[data-testid="stHorizontalBlock"] {
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-    .stDataFrame th, .stDataFrame td {
-        min-width: 100px;
-        text-align: center;
-    }
-    </style>
-""", unsafe_allow_html=True)
+
 # --- Kopfzeile & Logo ---
 st.title("📦 Pufferprognose")
 st.markdown("#### Bereich: Vormontage")
