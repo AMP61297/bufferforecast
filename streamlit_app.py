@@ -94,6 +94,9 @@ df_edited = df_edited[[
     "Ablauf", "Ausschleuser", "Puffer Ende"
 ]]
 
+# ✅ Leere Zellen durch 0 ersetzen
+df_edited.fillna(0, inplace=True)
+
 # --- Anzeige Tabelle ---
 st.subheader("📋 Tabelle mit berechnetem Puffer Ende")
 st.dataframe(df_edited, use_container_width=True)
