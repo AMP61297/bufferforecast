@@ -114,8 +114,15 @@ ax.set_title("📊 Entwicklung Puffer Ende", fontsize=16)
 ax.set_xlabel("Datum")
 ax.set_ylabel("Pufferbestand")
 ax.xaxis.set_major_formatter(mdates.DateFormatter('%d.%m'))
-ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
-fig.autofmt_xdate(rotation=45)
+# Dynamisches Intervall für die x-Achse
+if anzeige_tage <= 10:
+    ax.xaxis.set_major_locator(mdates.DayLocator(interval=1))
+elif anzeige_tage <= 20:
+    ax.xaxis.set_major_locator(mdates.DayLocator(interval=2))
+else:
+    ax.xaxis.set_major_locator(mdates.DayLocator(interval=3))
+
+fig.autofmt_xdate(rotation=30)
 ax.grid(True, linestyle="--", alpha=0.3)
 ax.legend()
 
