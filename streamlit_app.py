@@ -68,6 +68,10 @@ if neue_zeilen:
         ignore_index=True
     )
 
+st.session_state.eingabe_df = st.session_state.eingabe_df.sort_values(
+    by=["Linie", "Datum"]
+).reset_index(drop=True)
+
 
 # --- Zurücksetzen-Button ---
 if st.sidebar.button("🔁 Eingaben zurücksetzen"):
