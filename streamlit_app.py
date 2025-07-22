@@ -6,12 +6,11 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import io
 import xlsxwriter
-import datetime
 import zoneinfo
 
+# --- Layout erweitern ---
 st.markdown("""
     <style>
-    /* Maximiere die Breite des Seiteninhalts */
     .block-container {
         padding-left: 2rem;
         padding-right: 2rem;
@@ -20,87 +19,64 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-
-# --- Kopfzeile & Logo ---
+# --- Kopfzeile ---
 st.title("📦 Pufferprognose")
 st.markdown("#### Bereich: Vormontage")
 
-
-# --- Sidebar für Einstellungen ---
+# --- Sidebar-Einstellungen ---
 st.sidebar.header("Grenzwerte für Puffer Ende")
-min_grenze = st.sidebar.slider("🔽 Mindestwert", min_value=0, max_value=50, value=8)
-max_grenze = st.sidebar.slider("🔼 Maximalwert", min_value=10, max_value=100, value=60)
+min_grenze = st.sidebar.slider("🔽 Mindestwert", 0, 50, 8)
+max_grenze = st.sidebar.slider("🔼 Maximalwert", 10, 100, 60)
 
 st.sidebar.header("Zeitraum einstellen")
 start_datum = st.sidebar.date_input("Startdatum", value=datetime.date.today())
-anzeige_tage = st.sidebar.slider("Anzahl Tage anzeigen", min_value=1, max_value=30, value=5)
+anzeige_tage = st.sidebar.slider("Anzahl Tage anzeigen", 1, 30, 5)
 tage = [start_datum + datetime.timedelta(days=i) for i in range(anzeige_tage)]
 
 # --- Linien definieren ---
 linien = ["Linie 2", "Linie 3", "Linie 14", "Linie 15"]
 ausgewaehlte_linien = st.sidebar.multiselect("Wähle Montagelinien", linien, default=linien)
 
-# --- Dummy-Daten erstellen ---
-data = []
-for linie in linien:
-    for tag in tage:
-        data.append({
-            "Linie": linie,
-            "Datum": tag,
-            "Puffer Start": np.nan,
-            "Zulauf": np.nan,
-            "Ablauf": np.nan,
-            "Ausschleuser": np.nan
-        })
+# --- Session State initialisieren ---
+if "eingabe_df" not in st.session_state:
+    data = []
+    for linie in linien:
+        for tag in tage:
+            data.append({
+                "Linie": linie,
+                "Datum": tag,
+                "Puffer Start": np.nan,
+                "Zulauf": np.nan,
+                "Ablauf": np.nan,
+                "Ausschleuser": np.nan
+            })
+    st.session_state.eingabe_df = pd.DataFrame(data)
 
-df_input = pd.DataFrame(data)
-df_input = df_input[df_input["Linie"].isin(ausgewaehlte_linien)].copy()
-df_edited = df_input.copy()
+# --- Zurücksetzen-Button ---
+if st.sidebar.button("🔁 Eingaben zurücksetzen"):
+    reset_data = []
+    for linie in linien:
+        for tag in tage:
+            reset_data.append({
+                "Linie": linie,
+                "Datum": tag,
+                "Puffer Start": np.nan,
+                "Zulauf": np.nan,
+                "Ablauf": np.nan,
+                "Ausschleuser": np.nan
+            })
+    st.session_state.eingabe_df = pd.DataFrame(reset_data)
+    st.success("Alle Eingaben wurden zurückgesetzt.")
 
+# --- Eingabedaten aus Session State holen & filtern ---
+df_input = st.session_state.eingabe_df.copy()
+df_input = df_input[
+    df_input["Datum"].isin(tage) &
+    df_input["Linie"].isin(ausgewaehlte_linien)
+].copy()
 
-# --- Berechnung Puffer Ende (mit 93% Zulauf) ---
-ZULAUF_FAKTOR = 0.93
-df_edited["Zulauf berechnet (93 %)"] = np.nan
-df_edited["Puffer Ende"] = np.nan
-df_edited = df_edited.sort_values(["Linie", "Datum"]).reset_index(drop=True)
-
-for linie in df_edited["Linie"].unique():
-    df_linie = df_edited[df_edited["Linie"] == linie].copy()
-
-    for i in range(len(df_linie)):
-        zulauf = df_linie.iloc[i]["Zulauf"]
-        ablauf = df_linie.iloc[i]["Ablauf"]
-        effektiver_zulauf = round(zulauf * ZULAUF_FAKTOR) if pd.notna(zulauf) else np.nan
-        df_linie.loc[df_linie.index[i], "Zulauf berechnet (93 %)"] = effektiver_zulauf
-
-        if i == 0:
-            if pd.notna(df_linie.iloc[i]["Puffer Start"]) and pd.notna(effektiver_zulauf) and pd.notna(ablauf):
-                df_linie.loc[df_linie.index[i], "Puffer Ende"] = (
-                    df_linie.iloc[i]["Puffer Start"] + effektiver_zulauf - ablauf
-                )
-        else:
-            if pd.isna(df_linie.iloc[i]["Puffer Start"]):
-                df_linie.loc[df_linie.index[i], "Puffer Start"] = df_linie.iloc[i - 1]["Puffer Ende"]
-            if pd.notna(df_linie.iloc[i]["Puffer Start"]) and pd.notna(effektiver_zulauf) and pd.notna(ablauf):
-                df_linie.loc[df_linie.index[i], "Puffer Ende"] = (
-                    df_linie.iloc[i]["Puffer Start"] + effektiver_zulauf - ablauf
-                )
-
-    df_edited.update(df_linie)
-
-# --- Spaltenreihenfolge ---
-df_edited = df_edited[[
-    "Linie", "Datum", "Puffer Start", "Zulauf", "Zulauf berechnet (93 %)",
-    "Ablauf", "Ausschleuser", "Puffer Ende"
-]]
-
-# ✅ Leere Zellen durch 0 ersetzen
-df_edited.fillna(0, inplace=True)
-
-# ✅ Eingabetabelle: editierbar (links)
+# --- Eingabe-Tabelle anzeigen ---
 st.subheader("✏️ Eingabedaten & 📋 Berechnete Puffer Ende")
-
-# ⚙️ Volle Breite ermöglichen
 st.markdown("""<style>
     .element-container:has(> .block-container) {
         max-width: none !important;
@@ -109,7 +85,6 @@ st.markdown("""<style>
     }
 </style>""", unsafe_allow_html=True)
 
-# 🧮 Bearbeitbare Tabelle (links)
 col1, col2 = st.columns([5, 5], gap="large")
 
 with col1:
@@ -121,18 +96,18 @@ with col1:
         disabled=["Linie", "Datum"]
     )
 
-# 🧠 Daten berechnen auf Basis der Eingabe
-df_edited = df_input.copy()
+# --- Session State aktualisieren ---
+st.session_state.eingabe_df.update(df_input)
 
+# --- Berechnung auf Basis der Eingaben ---
+df_edited = df_input.copy()
 ZULAUF_FAKTOR = 0.93
 df_edited["Zulauf berechnet (93 %)"] = 0.0
 df_edited["Puffer Ende"] = 0.0
-
 df_edited = df_edited.sort_values(["Linie", "Datum"]).reset_index(drop=True)
 
 for linie in df_edited["Linie"].unique():
     df_linie = df_edited[df_edited["Linie"] == linie].copy()
-
     for i in range(len(df_linie)):
         zulauf = df_linie.iloc[i]["Zulauf"]
         ablauf = df_linie.iloc[i]["Ablauf"]
@@ -140,11 +115,10 @@ for linie in df_edited["Linie"].unique():
 
         df_linie.loc[df_linie.index[i], "Zulauf berechnet (93 %)"] = effektiver_zulauf
 
-        if i == 0:
-            if pd.notna(df_linie.iloc[i]["Puffer Start"]):
-                df_linie.loc[df_linie.index[i], "Puffer Ende"] = (
-                    df_linie.iloc[i]["Puffer Start"] + effektiver_zulauf - ablauf
-                )
+        if i == 0 and pd.notna(df_linie.iloc[i]["Puffer Start"]):
+            df_linie.loc[df_linie.index[i], "Puffer Ende"] = (
+                df_linie.iloc[i]["Puffer Start"] + effektiver_zulauf - ablauf
+            )
         else:
             if pd.isna(df_linie.iloc[i]["Puffer Start"]):
                 df_linie.loc[df_linie.index[i], "Puffer Start"] = df_linie.iloc[i - 1]["Puffer Ende"]
@@ -154,7 +128,7 @@ for linie in df_edited["Linie"].unique():
 
     df_edited.update(df_linie)
 
-# 🎯 Berechnete Tabelle (rechts)
+# --- Ausgabetabelle anzeigen ---
 with col2:
     st.dataframe(
         df_edited.fillna(0),
@@ -162,10 +136,9 @@ with col2:
         height=anzeige_tage * 43 + 100
     )
 
-
-# --- Diagramm über die volle Breite anzeigen ---
+# --- Diagramm ---
 st.subheader("📊 Verlauf Puffer Ende")
-fig, ax = plt.subplots(figsize=(18, 6))  # ⬅️ Volle Breite
+fig, ax = plt.subplots(figsize=(18, 6))
 
 for linie in ausgewaehlte_linien:
     df_plot = df_edited[df_edited["Linie"] == linie]
@@ -185,8 +158,7 @@ ax.legend()
 
 st.pyplot(fig)
 
-
-# --- Excel-Export mit Bild, Zeitstempel & Formatierung ---
+# --- Excel-Export mit Zeitstempel & Grafik ---
 berlin = zoneinfo.ZoneInfo("Europe/Berlin")
 zeitstempel = datetime.datetime.now(berlin).strftime("Exportzeitpunkt: %Y-%m-%d %H:%M:%S")
 
@@ -199,25 +171,16 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
 
     workbook = writer.book
     worksheet = writer.sheets["Pufferprognose"]
-
-    # 📅 Zeitstempel in Zelle L1
     worksheet.write("L1", zeitstempel)
 
-    # 📊 Bild unter der Tabelle einfügen
     image_row = len(df_edited) + 5
     worksheet.insert_image(image_row, 0, image_path, {
-        'x_offset': 0, 'y_offset': 10,
-        'x_scale': 1.0, 'y_scale': 1.0
+        'x_offset': 0, 'y_offset': 10, 'x_scale': 1.0, 'y_scale': 1.0
     })
 
-    # 📐 Formatierte Tabelle
     header_format = workbook.add_format({
-        'bold': True,
-        'text_wrap': True,
-        'valign': 'middle',
-        'fg_color': '#F36F21',
-        'color': 'white',
-        'border': 1
+        'bold': True, 'text_wrap': True, 'valign': 'middle',
+        'fg_color': '#F36F21', 'color': 'white', 'border': 1
     })
 
     for col_num, value in enumerate(df_edited.columns.values):
@@ -229,18 +192,16 @@ with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         'style': 'Table Style Medium 9'
     })
 
-    # 📏 Spaltenbreite automatisch anpassen
     for i, column in enumerate(df_edited.columns):
         max_len = max(df_edited[column].astype(str).map(len).max(), len(column)) + 2
         worksheet.set_column(i, i, max_len)
 
-    # 📄 Seitenlayout
     worksheet.set_paper(9)
     worksheet.fit_to_pages(1, 0)
     worksheet.center_horizontally()
     worksheet.set_margins(left=0.5, right=0.5, top=0.75, bottom=0.75)
 
-# 📥 Download-Button
+# --- Download-Button ---
 st.download_button(
     label="📥 Excel-Datei herunterladen",
     data=output.getvalue(),
