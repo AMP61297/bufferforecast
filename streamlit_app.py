@@ -37,12 +37,22 @@ tage = [start_datum + datetime.timedelta(days=i) for i in range(anzeige_tage)]
 linien = ["Linie 2", "Linie 3", "Linie 14", "Linie 15"]
 ausgewaehlte_linien = st.sidebar.multiselect("Wähle Montagelinien", linien, default=linien)
 
-# --- Session State initialisieren ---
+# --- Session State erweitern, falls neue Daten erforderlich ---
 if "eingabe_df" not in st.session_state:
-    data = []
-    for linie in linien:
-        for tag in tage:
-            data.append({
+    st.session_state.eingabe_df = pd.DataFrame(columns=[
+        "Linie", "Datum", "Puffer Start", "Zulauf", "Ablauf", "Ausschleuser"
+    ])
+
+# ✨ Automatisch fehlende Kombinationen hinzufügen
+bestehende_kombis = set(
+    tuple(row) for row in st.session_state.eingabe_df[["Linie", "Datum"]].to_records(index=False)
+)
+
+neue_zeilen = []
+for linie in linien:
+    for tag in tage:
+        if (linie, tag) not in bestehende_kombis:
+            neue_zeilen.append({
                 "Linie": linie,
                 "Datum": tag,
                 "Puffer Start": np.nan,
@@ -50,7 +60,14 @@ if "eingabe_df" not in st.session_state:
                 "Ablauf": np.nan,
                 "Ausschleuser": np.nan
             })
-    st.session_state.eingabe_df = pd.DataFrame(data)
+
+# ⬆️ Neue Zeilen hinzufügen
+if neue_zeilen:
+    st.session_state.eingabe_df = pd.concat(
+        [st.session_state.eingabe_df, pd.DataFrame(neue_zeilen)],
+        ignore_index=True
+    )
+
 
 # --- Zurücksetzen-Button ---
 if st.sidebar.button("🔁 Eingaben zurücksetzen"):
