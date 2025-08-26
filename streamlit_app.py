@@ -34,7 +34,7 @@ anzeige_tage = st.sidebar.slider("Anzahl Tage anzeigen", 1, 30, 5)
 tage = [start_datum + datetime.timedelta(days=i) for i in range(anzeige_tage)]
 
 # --- Linien definieren ---
-linien = ["Linie 2", "Linie 3"]
+linien = ["Linie 2", "Linie 3", "Linie 20"]
 ausgewaehlte_linien = st.sidebar.multiselect("Wähle Montagelinien", linien, default=linien)
 
 # --- Session State erweitern, falls neue Daten erforderlich ---
